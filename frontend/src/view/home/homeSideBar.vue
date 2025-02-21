@@ -72,7 +72,10 @@ const method = reactive({
       // If the selected menu is skipped, no action will be taken
       store.commit('system/setCurrentRouterPath', item.routerPath)
       store.commit('system/addOpenedMenu', item.routerPath)
-      router.push(item.routerPath)
+      // router.push(item.routerPath)
+      router.push(item.routerPath).catch((error) => {
+        console.error('路由导航出错:', error);
+      });
     }
     // if (menuName === 'login') {
     //   store.commit('system/clearOpenedMenu', menuName)

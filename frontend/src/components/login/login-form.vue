@@ -84,6 +84,7 @@ const method = reactive({
     if (!valid) {
       return
     }
+
     const { data: loginRes } = await login({
       user_name: data.userName,
       password: Md5.hashStr(data.password)

@@ -315,6 +315,7 @@ onMounted(() => {
     }
   ]
 
+  console.log(data.btnList);
   method.getData()
 })
 

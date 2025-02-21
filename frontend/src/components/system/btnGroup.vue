@@ -14,6 +14,7 @@
 <script setup lang="tsx">
 // import { onMounted, reactive } from 'vue'
 import tooltipBtn from '@/components/tooltip-btn.vue'
+import { onMounted } from 'vue'
 
 interface BtnItem {
   name: string
@@ -26,6 +27,7 @@ defineProps<{
   btnList: BtnItem[]
   authorityList: string[]
 }>()
+
 </script>
 
 <style scoped lang="less">

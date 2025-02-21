@@ -2,6 +2,7 @@ import XEUtils from 'xe-utils'
 import { useRoute } from 'vue-router'
 import { SearchObject, SearchOperator } from '@/types/System/Form'
 import { store } from '@/store'
+import { de } from 'vuetify/lib/locale/index.mjs'
 
 export const setSearchObject = (searchForm: any, preciseSearchCols: string[] = []) => {
   const searchObjects: Array<SearchObject> = []
