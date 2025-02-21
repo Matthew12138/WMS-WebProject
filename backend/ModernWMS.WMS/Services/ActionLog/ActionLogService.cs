@@ -14,6 +14,7 @@ using Microsoft.Extensions.Localization;
 using ModernWMS.Core.DynamicSearch;
 using ModernWMS.Core.JWT;
 using ModernWMS.Core.Models;
+using System.Diagnostics;
 
 namespace ModernWMS.WMS.Services
 {
@@ -90,31 +91,39 @@ namespace ModernWMS.WMS.Services
         /// <returns></returns>
         public async Task<(List<ActionLogViewModel> data, int totals)> PageAsync(PageSearch pageSearch, CurrentUser currentUser)
         {
-            QueryCollection queries = new QueryCollection();
-            if (pageSearch.searchObjects.Any())
+            try
             {
-                pageSearch.searchObjects.ForEach(s =>
+                QueryCollection queries = new QueryCollection();
+                if (pageSearch.searchObjects.Any())
                 {
-                    queries.Add(s);
-                });
+                    pageSearch.searchObjects.ForEach(s =>
+                    {
+                        queries.Add(s);
+                    });
+                }
+                var query = from log in _dBContext.GetDbSet<ActionLogEntity>().AsNoTracking()
+                            where log.tenant_id == currentUser.tenant_id
+                            select new ActionLogViewModel
+                            {
+                                id = log.id,
+                                vue_path = log.vue_path,
+                                user_name = log.user_name,
+                                action_content = log.action_content,
+                                action_time = log.action_time,
+                            };
+                query = query.Where(queries.AsExpression<ActionLogViewModel>());
+                int totals = await query.CountAsync();
+                var list = await query.OrderByDescending(t => t.action_time)
+                           .Skip((pageSearch.pageIndex - 1) * pageSearch.pageSize)
+                           .Take(pageSearch.pageSize)
+                           .ToListAsync();
+                return (list, totals);
             }
-            var query = from log in _dBContext.GetDbSet<ActionLogEntity>().AsNoTracking()
-                        where log.tenant_id == currentUser.tenant_id
-                        select new ActionLogViewModel
-                        {
-                            id = log.id,
-                            vue_path = log.vue_path,
-                            user_name = log.user_name,
-                            action_content = log.action_content,
-                            action_time = log.action_time,
-                        };
-            query = query.Where(queries.AsExpression<ActionLogViewModel>());
-            int totals = await query.CountAsync();
-            var list = await query.OrderByDescending(t => t.action_time)
-                       .Skip((pageSearch.pageIndex - 1) * pageSearch.pageSize)
-                       .Take(pageSearch.pageSize)
-                       .ToListAsync();
-            return (list, totals);
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         #endregion Api

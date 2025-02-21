@@ -12,6 +12,7 @@ using ModernWMS.Core.Utility;
 using ModernWMS.WMS.Entities.Models;
 using ModernWMS.WMS.Entities.ViewModels;
 using ModernWMS.WMS.IServices;
+using System.Diagnostics;
 
 namespace ModernWMS.WMS.Services
 {
@@ -174,39 +175,47 @@ namespace ModernWMS.WMS.Services
         /// <returns></returns>
         public async Task<List<MenuViewModel>> GetMenusByRoleId(int userrole_id)
         {
-            var Rolemenus = _dBContext.GetDbSet<RolemenuEntity>(); 
-            var Menus = _dBContext.GetDbSet<MenuEntity>();
-            var data = await (from rm in Rolemenus.AsNoTracking()
-                              join m in Menus.AsNoTracking() on rm.menu_id equals m.id
-                              where rm.userrole_id == userrole_id
-                              orderby m.sort, m.menu_name
-                              select new 
-                              {
-                                  id = m.id,
-                                  menu_name = m.menu_name,
-                                  module = m.module,
-                                  vue_path = m.vue_path,
-                                  vue_path_detail = m.vue_path_detail,
-                                  vue_directory = m.vue_directory,
-                                  sort = m.sort,
-                                  rm.menu_actions_authority
-                              }).ToListAsync();
-            if (data.Any())
+            try
             {
-                var result = data.Select(m => new MenuViewModel
+                var Rolemenus = _dBContext.GetDbSet<RolemenuEntity>();
+                var Menus = _dBContext.GetDbSet<MenuEntity>();
+                var data = await (from rm in Rolemenus.AsNoTracking()
+                                  join m in Menus.AsNoTracking() on rm.menu_id equals m.id
+                                  where rm.userrole_id == userrole_id
+                                  orderby m.sort, m.menu_name
+                                  select new
+                                  {
+                                      id = m.id,
+                                      menu_name = m.menu_name,
+                                      module = m.module,
+                                      vue_path = m.vue_path,
+                                      vue_path_detail = m.vue_path_detail,
+                                      vue_directory = m.vue_directory,
+                                      sort = m.sort,
+                                      rm.menu_actions_authority
+                                  }).ToListAsync();
+                if (data.Any())
                 {
-                    id = m.id,
-                    menu_name = m.menu_name,
-                    module = m.module,
-                    vue_path = m.vue_path,
-                    vue_path_detail = m.vue_path_detail,
-                    vue_directory = m.vue_directory,
-                    sort = m.sort,
-                    menu_actions = JsonHelper.DeserializeObject<List<string>>(m.menu_actions_authority)
-                }).ToList();
-                return result;
+                    var result = data.Select(m => new MenuViewModel
+                    {
+                        id = m.id,
+                        menu_name = m.menu_name,
+                        module = m.module,
+                        vue_path = m.vue_path,
+                        vue_path_detail = m.vue_path_detail,
+                        vue_directory = m.vue_directory,
+                        sort = m.sort,
+                        menu_actions = JsonHelper.DeserializeObject<List<string>>(m.menu_actions_authority)
+                    }).ToList();
+                    return result;
+                }
+                return new List<MenuViewModel>();
             }
-            return new List<MenuViewModel>();
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                throw;
+            }
         }
         /// <summary>
         /// add a new record
