@@ -15,6 +15,7 @@ using ModernWMS.Core.Models;
 using ModernWMS.Core.JWT;
 using ModernWMS.Core.Utility;
 using System.Text;
+using System.Diagnostics;
 
 namespace ModernWMS.WMS.Services
  {
@@ -60,28 +61,36 @@ namespace ModernWMS.WMS.Services
          /// <returns></returns>
          public async Task<(List<SupplierViewModel> data, int totals)> PageAsync(PageSearch pageSearch, CurrentUser currentUser)
          {
-             QueryCollection queries = new QueryCollection();
-             if (pageSearch.searchObjects.Any())
-             {
-                 pageSearch.searchObjects.ForEach(s =>
-                 {
-                     queries.Add(s);
-                 });
-             }
-             var DbSet = _dBContext.GetDbSet<SupplierEntity>();
-             var query = DbSet.AsNoTracking()
-                 .Where(t => t.tenant_id.Equals(currentUser.tenant_id))
-                 .Where(queries.AsExpression<SupplierEntity>());
-            if(pageSearch.sqlTitle == "select")
+            try
             {
-                query = query.Where(t => t.is_valid == true);
+                QueryCollection queries = new QueryCollection();
+                if (pageSearch.searchObjects.Any())
+                {
+                    pageSearch.searchObjects.ForEach(s =>
+                    {
+                        queries.Add(s);
+                    });
+                }
+                var DbSet = _dBContext.GetDbSet<SupplierEntity>();
+                var query = DbSet.AsNoTracking()
+                    .Where(t => t.tenant_id.Equals(currentUser.tenant_id))
+                    .Where(queries.AsExpression<SupplierEntity>());
+                if (pageSearch.sqlTitle == "select")
+                {
+                    query = query.Where(t => t.is_valid == true);
+                }
+                int totals = await query.CountAsync();
+                var list = await query.OrderByDescending(t => t.create_time)
+                           .Skip((pageSearch.pageIndex - 1) * pageSearch.pageSize)
+                           .Take(pageSearch.pageSize)
+                           .ToListAsync();
+                return (list.Adapt<List<SupplierViewModel>>(), totals);
             }
-             int totals = await query.CountAsync();
-             var list = await query.OrderByDescending(t => t.create_time)
-                        .Skip((pageSearch.pageIndex - 1) * pageSearch.pageSize)
-                        .Take(pageSearch.pageSize)
-                        .ToListAsync();
-             return (list.Adapt<List<SupplierViewModel>>(), totals);
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                throw;
+            }
          }
  
          /// <summary>
